@@ -165,52 +165,28 @@ public class SecureStorage extends CordovaPlugin {
             return true;
         }
         if ("secureDevice".equals(action)) {
-            cordova.getThreadPool().execute(() -> {
-                // Open the Security Settings screen. The app developer should inform the user about
-                // the security requirements of the app and initialize again after the user has changed the screen-lock settings
-                secureDeviceContext = callbackContext;
-                secureDevice();
-            });
+            // Open the Security Settings screen. The app developer should inform the user about
+            // the security requirements of the app and initialize again after the user has changed the screen-lock settings
+            secureDeviceContext = callbackContext;
+            secureDevice();
             return true;
         }
         if ("remove".equals(action)) {
-            cordova.getThreadPool().execute(() -> {
-                try {
-                    String service = args.getString(0);
-                    String key = args.getString(1);
-                    getStorage(service).remove(key);
-                    callbackContext.success(key);
-
-                } catch (JSONException e) {
-                    Log.e(TAG, "Remove failed :", e);
-                    callbackContext.error(e.getMessage());
-                }
-            });
+            String service = args.getString(0);
+            String key = args.getString(1);
+            getStorage(service).remove(key);
+            callbackContext.success(key);
             return true;
         }
         if ("keys".equals(action)) {
-            cordova.getThreadPool().execute(() -> {
-                try {
-                    String service = args.getString(0);
-                    callbackContext.success(new JSONArray(getStorage(service).keys()));
-                } catch (JSONException e) {
-                    Log.e(TAG, "Fetch key value failed :", e);
-                    callbackContext.error(e.getMessage());
-                }
-            });
+            String service = args.getString(0);
+            callbackContext.success(new JSONArray(getStorage(service).keys()));
             return true;
         }
         if ("clear".equals(action)) {
-            cordova.getThreadPool().execute(() -> {
-                try {
-                    String service = args.getString(0);
-                    getStorage(service).clear();
-                    callbackContext.success();
-                } catch (JSONException e) {
-                    Log.e(TAG, "Clear failed :", e);
-                    e.printStackTrace();
-                }
-            });
+            String service = args.getString(0);
+            getStorage(service).clear();
+            callbackContext.success();
             return true;
         }
         return false;

@@ -9,7 +9,6 @@ import android.security.keystore.KeyInfo;
 import android.security.keystore.KeyProperties;
 import android.security.keystore.UserNotAuthenticatedException;
 import android.util.Log;
-
 import javax.crypto.Cipher;
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
@@ -37,7 +36,8 @@ public class RSA {
     }
 
     public static void createKeyPair(Context ctx, String alias, Integer userAuthenticationValidityDuration) throws Exception {
-        AlgorithmParameterSpec spec = IS_API_23_AVAILABLE ? getInitParams(alias, userAuthenticationValidityDuration) : getInitParamsLegacy(ctx, alias);
+        // AlgorithmParameterSpec spec = IS_API_23_AVAILABLE ? getInitParams(alias, userAuthenticationValidityDuration) : getInitParamsLegacy(ctx, alias);
+        AlgorithmParameterSpec spec = getInitParamsLegacy(ctx, alias);
 
         KeyPairGenerator kpGenerator = KeyPairGenerator.getInstance(KeyProperties.KEY_ALGORITHM_RSA, KEYSTORE_PROVIDER);
         kpGenerator.initialize(spec);

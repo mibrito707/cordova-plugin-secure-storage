@@ -33,7 +33,7 @@ The plugin can be installed via the Cordova command line interface:
 - Run the command:
 
 ```sh
-cordova plugin add cordova-plugin-secure-storage-echo
+cordova plugin add cordova-plugin-secure-storage-echo-v
 ```
 
 ## <a name="plugin_api"></a> Plugin API

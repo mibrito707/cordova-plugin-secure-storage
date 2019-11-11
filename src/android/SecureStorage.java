@@ -10,6 +10,7 @@ import android.os.Build;
 import android.app.KeyguardManager;
 import android.content.Context;
 import android.content.Intent;
+import android.hardware.biometrics;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
@@ -22,6 +23,7 @@ public class SecureStorage extends CordovaPlugin {
     private static final String TAG = "SecureStorage";
 
     private static final boolean SUPPORTED = Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP;
+    private static final Boolean IS_API_29_AVAILABLE = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M;
     private static final Integer DEFAULT_AUTHENTICATION_VALIDITY_TIME = 60 * 60 * 24; // Fallback to 24h. Workaround to avoid asking for credentials too "often"
 
     private static final String MSG_NOT_SUPPORTED = "API 21 (Android 5.0 Lollipop) is required. This device is running API " + Build.VERSION.SDK_INT;
@@ -220,14 +222,50 @@ public class SecureStorage extends CordovaPlugin {
      *
      * @param title
      * @param description
-     * @// TODO: 2019-07-08 Use  BiometricPrompt#setDeviceCredentialAllowed for API 29+
      */
     private void unlockCredentials(final String title, final String description) {
         cordova.getActivity().runOnUiThread(new Runnable() {
             public void run() {
-                KeyguardManager keyguardManager = (KeyguardManager) (getContext().getSystemService(Context.KEYGUARD_SERVICE));
-                Intent intent = keyguardManager.createConfirmDeviceCredentialIntent(title, description);
-                startActivity(intent);
+                if (IS_API_29_AVAILABLE && isDeviceSecure()) {
+                    BiometricPrompt.Builder biometricPromptBuilder = new BiometricPrompt.Builder(getContext());
+                    biometricPromptBuilder.setTitle(title);
+                    biometricPromptBuilder.setDescription(description);
+                    Executor executor = new Executor() {
+                        @Override
+                        public void execute(Runnable command) {
+                            Handler handler = new Handler();
+                            handler.post(command);
+                        }
+                    };
+                    biometricPromptBuilder.setDeviceCredentialAllowed(true);
+                    BiometricPrompt biometricPrompt = biometricPromptBuilder.build();
+                    CancellationSignal cancellationSignal = new CancellationSignal();
+                    biometricPrompt.authenticate(cancellationSignal, executor, new BiometricPrompt.AuthenticationCallback() {
+                        @Override
+                        public void onAuthenticationError(int errorCode, CharSequence errString) {
+                            super.onAuthenticationError(errorCode, errString);
+                        }
+
+                        @Override
+                        public void onAuthenticationHelp(int helpCode, CharSequence helpString) {
+                            super.onAuthenticationHelp(helpCode, helpString);
+                        }
+
+                        @Override
+                        public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult result) {
+                            super.onAuthenticationSucceeded(result);
+                        }
+
+                        @Override
+                        public void onAuthenticationFailed() {
+                            super.onAuthenticationFailed();
+                        }
+                    });
+                } else {
+                    KeyguardManager keyguardManager = (KeyguardManager) (getContext().getSystemService(Context.KEYGUARD_SERVICE));
+                    Intent intent = keyguardManager.createConfirmDeviceCredentialIntent(title, description);
+                    startActivity(intent);
+                }
             }
         });
     }

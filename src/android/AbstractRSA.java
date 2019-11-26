@@ -111,8 +111,10 @@ public abstract class AbstractRSA {
             byte[] encrypted = encrypt(alias.getBytes(), alias);
             decrypt(encrypted, alias);
             return false;
-        } catch (InvalidKeyException noAuthEx) {
+        } catch (KeyPermanentlyInvalidatedException keyInvalidEx) {
             deleteKey(alias);
+            return true;
+        } catch (InvalidKeyException noAuthEx) {
             return true;
         } catch (Exception e) {
             // Other

@@ -95,6 +95,16 @@ public abstract class AbstractRSA {
         return key;
     }
 
+    private void deleteKey(String alias) {
+      try {
+          KeyStore keyStore = KeyStore.getInstance(KEYSTORE_PROVIDER);
+          keyStore.load(null, null);
+          keyStore.deleteEntry(alias);
+      } catch (Exception e) {
+          Log.e(TAG, "Exception deleting key", e);
+      }
+    }
+
     boolean userAuthenticationRequired(String alias) {
         try {
             // Do a quick encrypt/decrypt test
@@ -102,6 +112,7 @@ public abstract class AbstractRSA {
             decrypt(encrypted, alias);
             return false;
         } catch (InvalidKeyException noAuthEx) {
+            deleteKey(alias);
             return true;
         } catch (Exception e) {
             // Other

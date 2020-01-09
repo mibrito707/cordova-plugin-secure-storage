@@ -3,6 +3,7 @@ package com.crypho.plugins;
 import android.content.Context;
 import android.os.Build;
 import android.security.keystore.KeyProperties;
+import android.util.Log;
 
 import java.security.InvalidKeyException;
 import java.security.Key;

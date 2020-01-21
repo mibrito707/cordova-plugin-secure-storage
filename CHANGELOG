@@ -1,6 +1,55 @@
 Changelog
 =========
 
+5.0.1 - 2019-11-25
+------------------
+
+- Handle nullable Confirm Credentials Intent.
+  [mibrito707]
+
+- Added Support for API 19.
+  [giordanocardillo]
+
+5.0.0 - 2019-10-02
+------------------
+
+- Repackage as cordova-plugin-secure-storage-echo.
+  [mibrito707]
+
+4.0.2 - 2019-09-30
+------------------
+
+- Update contributors.
+  [mibrito707]
+- Fixed code, added finals on variables used in inner scopes.
+  [giordanocardillo]
+- Fix for NoSuchAlgorithmException in pre M devices.
+  [oddcb]
+
+4.0.0-beta - 2019-07-09
+------------------
+
+- Support Android Q.
+  [mibrito707]
+
+3.0.2 - 2019-04-15
+------------------
+
+- Support data sharing between apps on android.
+  [ajay-ambre]
+
+3.0.1 - 2018-12-19
+------------------
+
+- Properly access private keys on android.
+  [demetris-manikas]
+
+3.0.0 - 2018-11-01
+------------------
+
+- Drop KitKat support, simplify android using only native AES.
+  [demetris-manikas]
+
 2.6.8 - 2017-05-29
 ------------------
 

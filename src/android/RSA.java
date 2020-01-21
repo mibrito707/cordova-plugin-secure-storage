@@ -1,95 +1,56 @@
 package com.crypho.plugins;
 
+import android.annotation.TargetApi;
 import android.content.Context;
+import android.os.Build;
+import android.security.keystore.KeyGenParameterSpec;
+import android.security.keystore.KeyInfo;
+import android.security.keystore.KeyProperties;
 import android.util.Log;
 
-import android.security.KeyPairGeneratorSpec;
-
-import java.math.BigInteger;
 import java.security.Key;
-import java.security.KeyPairGenerator;
-import java.security.KeyStore;
+import java.security.KeyFactory;
+import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.RSAKeyGenParameterSpec;
 import java.util.Calendar;
 
 import javax.crypto.Cipher;
-import javax.security.auth.x500.X500Principal;
 
-public class RSA {
-	private static final String KEYSTORE_PROVIDER = "AndroidKeyStore";
-	private static final Cipher CIPHER = getCipher();
+public class RSA extends AbstractRSA {
 
-	public static byte[] encrypt(byte[] buf, String alias) throws Exception {
-		synchronized (CIPHER) {
-			initCipher(Cipher.ENCRYPT_MODE, alias);
-			return CIPHER.doFinal(buf);
-		}
-	}
+    @TargetApi(Build.VERSION_CODES.M)
+    public boolean isEntryAvailable(String alias) {
+        try {
+            Key privateKey = loadKey(Cipher.DECRYPT_MODE, alias);
+            if (privateKey == null) {
+                return false;
+            }
+            KeyFactory factory = KeyFactory.getInstance(privateKey.getAlgorithm(), KEYSTORE_PROVIDER);
+            KeyInfo keyInfo = factory.getKeySpec(privateKey, KeyInfo.class);
+            return keyInfo.isInsideSecureHardware();
+        } catch (Exception e) {
+            Log.i(TAG, "Checking encryption keys failed.", e);
+            return false;
+        }
+    }
 
-	public static byte[] decrypt(byte[] encrypted, String alias) throws Exception {
-		synchronized (CIPHER) {
-			initCipher(Cipher.DECRYPT_MODE, alias);
-			return CIPHER.doFinal(encrypted);
-		}
-	}
+    @Override
+    @TargetApi(Build.VERSION_CODES.M)
+    public AlgorithmParameterSpec getInitParams(Context ctx, String alias, Integer userAuthenticationValidityDuration) {
+        Calendar notAfter = Calendar.getInstance();
+        notAfter.add(Calendar.YEAR, CERT_VALID_YEARS);
 
-	public static void createKeyPair(Context ctx, String alias) throws Exception {
-		Calendar notBefore = Calendar.getInstance();
-		Calendar notAfter = Calendar.getInstance();
-		notAfter.add(Calendar.YEAR, 100);
-		String principalString = String.format("CN=%s, OU=%s", alias, ctx.getPackageName());
-		KeyPairGeneratorSpec spec = new KeyPairGeneratorSpec.Builder(ctx)
-			.setAlias(alias)
-			.setSubject(new X500Principal(principalString))
-			.setSerialNumber(BigInteger.ONE)
-			.setStartDate(notBefore.getTime())
-			.setEndDate(notAfter.getTime())
-			.setEncryptionRequired()
-			.setKeySize(2048)
-			.setKeyType("RSA")
-			.build();
-		KeyPairGenerator kpGenerator = KeyPairGenerator.getInstance("RSA", KEYSTORE_PROVIDER);
-		kpGenerator.initialize(spec);
-		kpGenerator.generateKeyPair();
-	}
-
-	public static void initCipher(int cipherMode, String alias) throws Exception {
-		KeyStore.PrivateKeyEntry keyEntry = getKeyStoreEntry(alias);
-		if (keyEntry == null) {
-			throw new Exception("Failed to load key for " + alias);
-		}
-		Key key;
-		switch (cipherMode) {
-            case Cipher.ENCRYPT_MODE:
-                key = keyEntry.getCertificate().getPublicKey();
-                break;
-			case  Cipher.DECRYPT_MODE:
-				key = keyEntry.getPrivateKey();
-				break;
-			default : throw new Exception("Invalid cipher mode parameter");
-		}
-		CIPHER.init(cipherMode, key);
-	}
-
-
-	public static boolean isEntryAvailable(String alias) {
-		try {
-			return getKeyStoreEntry(alias) != null;
-		} catch (Exception e) {
-			return false;
-		}
-	}
-
-	private static KeyStore.PrivateKeyEntry getKeyStoreEntry(String alias) throws Exception {
-		KeyStore keyStore = KeyStore.getInstance(KEYSTORE_PROVIDER);
-		keyStore.load(null, null);
-		return (KeyStore.PrivateKeyEntry) keyStore.getEntry(alias, null);
-	}
-
-	private static Cipher getCipher() {
-		try {
-			return Cipher.getInstance("RSA/ECB/PKCS1Padding");
-		} catch (Exception e) {
-			return null;
-		}
-	}
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            return new KeyGenParameterSpec.Builder(alias, KeyProperties.PURPOSE_DECRYPT | KeyProperties.PURPOSE_ENCRYPT)
+                .setCertificateNotBefore(Calendar.getInstance().getTime())
+                .setCertificateNotAfter(notAfter.getTime())
+                .setAlgorithmParameterSpec(new RSAKeyGenParameterSpec(2048, RSAKeyGenParameterSpec.F4))
+                .setUserAuthenticationRequired(true)
+                .setUserAuthenticationValidityDurationSeconds(userAuthenticationValidityDuration)
+                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_RSA_PKCS1)
+                .setBlockModes(KeyProperties.BLOCK_MODE_ECB)
+                .build();
+        }
+        return null;
+    }
 }

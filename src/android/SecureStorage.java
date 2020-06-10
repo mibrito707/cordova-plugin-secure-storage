@@ -153,7 +153,7 @@ public class SecureStorage extends CordovaPlugin {
             if (value != null) {
                 JSONObject json = new JSONObject(value);
                 final byte[] encKey = Base64.decode(json.getString("key"), Base64.DEFAULT);
-                JSONObject data = json.getJSONObject("value");
+                final JSONObject data = json.getJSONObject("value");
                 final byte[] ct = Base64.decode(data.getString("ct"), Base64.DEFAULT);
                 final byte[] iv = Base64.decode(data.getString("iv"), Base64.DEFAULT);
                 final byte[] adata = Base64.decode(data.getString("adata"), Base64.DEFAULT);
@@ -266,7 +266,7 @@ public class SecureStorage extends CordovaPlugin {
      *
      * @param userAuthenticationValidityDuration User authentication validity duration in seconds
      */
-    private void generateEncryptionKeys(Integer userAuthenticationValidityDuration) {
+    private void generateEncryptionKeys(final Integer userAuthenticationValidityDuration) {
         if (generateKeysContext != null && !generateKeysContextRunning) {
             cordova.getThreadPool().execute(new Runnable() {
                 public void run() {

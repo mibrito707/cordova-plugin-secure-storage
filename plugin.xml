@@ -65,6 +65,11 @@
                 <param name="browser-package" value="SecureStorage" />
             </feature>
         </config-file>
+
+        <js-module src="src/browser/SecureStorage.js" name="SecureStorageBrowserImpl">
+            <runs />
+        </js-module>
+        
     </platform>
 
     <platform name="windows">

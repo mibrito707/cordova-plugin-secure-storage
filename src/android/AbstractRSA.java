@@ -53,7 +53,16 @@ public abstract class AbstractRSA {
         AlgorithmParameterSpec spec = getInitParams(ctx, alias, userAuthenticationValidityDuration);
         KeyPairGenerator kpGenerator = KeyPairGenerator.getInstance(getRSAKey(), KEYSTORE_PROVIDER);
         kpGenerator.initialize(spec);
-        kpGenerator.generateKeyPair();
+        KeyPair keyPair = kpGenerator.generateKeyPair();
+        if (!isInsideSecureHardware(keyPair.getPrivate())) {
+            throw new Exception("Key is not stored in secure hardware");
+        }
+    }
+
+    boolean isInsideSecureHardware(Key privateKey) throws NoSuchProviderException, NoSuchAlgorithmException, InvalidKeySpecException {
+        KeyFactory factory = KeyFactory.getInstance(privateKey.getAlgorithm(), KEYSTORE_PROVIDER);
+        KeyInfo keyInfo = factory.getKeySpec(privateKey, KeyInfo.class);
+        return keyInfo.isInsideSecureHardware();
     }
 
     public byte[] encrypt(byte[] buf, String alias) throws Exception {

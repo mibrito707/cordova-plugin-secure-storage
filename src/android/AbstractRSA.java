@@ -2,13 +2,19 @@ package com.crypho.plugins;
 
 import android.content.Context;
 import android.os.Build;
+import android.security.keystore.KeyInfo;
 import android.security.keystore.KeyProperties;
 
 import java.security.InvalidKeyException;
 import java.security.Key;
+import java.security.KeyFactory;
+import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
+import java.security.NoSuchAlgorithmException;
+import java.security.NoSuchProviderException;
 import java.security.spec.AlgorithmParameterSpec;
+import java.security.spec.InvalidKeySpecException;
 
 import javax.crypto.Cipher;
 

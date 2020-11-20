@@ -8,6 +8,7 @@ import android.os.Build;
 import android.provider.Settings;
 import android.util.Base64;
 import android.util.Log;
+import android.hardware.biometrics;
 
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaArgs;
@@ -24,6 +25,7 @@ public class SecureStorage extends CordovaPlugin {
     private static final String TAG = "SecureStorage";
 
     private static final boolean SUPPORTED = Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT;
+    private static final Boolean IS_API_29_AVAILABLE = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M;
     private static final Integer DEFAULT_AUTHENTICATION_VALIDITY_TIME = 60 * 60 * 24; // Fallback to 24h. Workaround to avoid asking for credentials too "often"
 
     private static final String MSG_NOT_SUPPORTED = "API 19 (Android 4.4 KitKat) is required. This device is running API " + Build.VERSION.SDK_INT;
@@ -232,19 +234,52 @@ public class SecureStorage extends CordovaPlugin {
      *
      * @param title
      * @param description
-     * @// TODO: 2019-07-08 Use  BiometricPrompt#setDeviceCredentialAllowed for API 29+
      */
     @TargetApi(Build.VERSION_CODES.LOLLIPOP)
     private void unlockCredentials(final String title, final String description) {
         cordova.getActivity().runOnUiThread(new Runnable() {
             public void run() {
-                KeyguardManager keyguardManager = (KeyguardManager) (getContext().getSystemService(Context.KEYGUARD_SERVICE));
-                Intent intent = keyguardManager.createConfirmDeviceCredentialIntent(title, description);
-                if (intent != null) {
-                    startActivity(intent);
+                if (IS_API_29_AVAILABLE && isDeviceSecure()) {
+                    // Building a biometric prompt instance with custom title and description.
+                    BiometricPrompt.Builder biometricPromptBuilder = new BiometricPrompt.Builder(getContext());
+                    biometricPromptBuilder.setTitle(title);
+                    biometricPromptBuilder.setDescription(description);
+                    biometricPromptBuilder.setDeviceCredentialAllowed(true);
+                    BiometricPrompt biometricPrompt = biometricPromptBuilder.build();
+                    CancellationSignal cancellationSignal = new CancellationSignal();
+                    Executor executor = getExecutor();
+                    // Launching the credential confirmation popup to get biometric validaiton.
+                    // If biometric is not available will open the other unlock methods.  
+                    biometricPrompt.authenticate(cancellationSignal, executor, new BiometricPrompt.AuthenticationCallback() {
+                        @Override
+                        public void onAuthenticationError(int errorCode, CharSequence errString) {
+                            super.onAuthenticationError(errorCode, errString);
+                        }
+
+                        @Override
+                        public void onAuthenticationHelp(int helpCode, CharSequence helpString) {
+                            super.onAuthenticationHelp(helpCode, helpString);
+                        }
+
+                        @Override
+                        public void onAuthenticationSucceeded(BiometricPrompt.AuthenticationResult result) {
+                            super.onAuthenticationSucceeded(result);
+                        }
+
+                        @Override
+                        public void onAuthenticationFailed() {
+                            super.onAuthenticationFailed();
+                        }
+                    });
                 } else {
-                    Log.e(TAG, "Error creating Confirm Credentials Intent");
-                    unlockCredentialsContext.error("Cant't unlock credentials, error creating Confirm Credentials Intent");
+                    KeyguardManager keyguardManager = (KeyguardManager) (getContext().getSystemService(Context.KEYGUARD_SERVICE));
+                    Intent intent = keyguardManager.createConfirmDeviceCredentialIntent(title, description);
+                    if (intent != null) {
+                        startActivity(intent);
+                    } else {
+                        Log.e(TAG, "Error creating Confirm Credentials Intent");
+                        unlockCredentialsContext.error("Cant't unlock credentials, error creating Confirm Credentials Intent");
+                    }
                 }
             }
         });
@@ -309,6 +344,19 @@ public class SecureStorage extends CordovaPlugin {
 
     private Context getContext() {
         return cordova.getActivity().getApplicationContext();
+    }
+
+    /**
+     * Creates a executor with handler to run runnable tasks.
+     */
+    private Executor getExecutor() {
+        return new Executor() {
+            @Override
+            public void execute(Runnable command) {
+                Handler handler = new Handler();
+                handler.post(command);
+            }
+        };
     }
 
     private Context getPackageContext(String packageName) throws Exception {

@@ -114,7 +114,15 @@
         if (accounts) {
             NSMutableArray *array = [NSMutableArray arrayWithCapacity:[accounts count]];
             for (id dict in accounts) {
-                [array addObject:[dict valueForKeyPath:@"acct"]];
+                if([NSStringFromClass([[dict valueForKeyPath:@"acct"] class]) isEqualToString:@"__NSCFData"]){
+                     @try {
+                        [array addObject:[NSString stringWithUTF8String:[[dict valueForKeyPath:@"acct"] bytes]]];
+                     } @catch (NSException *exception) {
+                        // Just ignore this key :(
+                     }
+                }else{
+                    [array addObject:[dict valueForKeyPath:@"acct"]];
+                }
             }
 
             CDVPluginResult *commandResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:array];
